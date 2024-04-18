@@ -1,8 +1,8 @@
 from clayutil.futil import OsuPlaylist
 
 oauth = "../osu.properties"
-playlist = "./playlists/2000pp过关.properties"
-o0 = OsuPlaylist(oauth, True, False)
+playlist = "./playlists/HSC3S1R1.properties"
+o0 = OsuPlaylist(oauth)
 font_difficulty = "../Kodchasan-Medium.ttf"
 font_title = "../AlibabaPuHuiTi-3-75-SemiBold.ttf"
 font_artist = "../AlibabaPuHuiTi-3-55-Regular.ttf"
