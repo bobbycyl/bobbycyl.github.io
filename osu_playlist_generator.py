@@ -1,12 +1,19 @@
+import os
+import re
+
 from clayutil.futil import OsuPlaylist
 
+
 oauth = "../osu.properties"
-normal_playlists = [
-    "./playlists/2000pp过关.properties",
-]
-match_playlists = [
-    "./playlists/HSC3S1R1.properties",
-]
+original_playlist_pattern = re.compile(r"o\..*\.properties")
+match_playlist_pattern = re.compile(r"m\..*\.properties")
+normal_playlists = []
+match_playlists = []
+for i in os.listdir("./playlists"):
+    if original_playlist_pattern.match(i):
+        normal_playlists.append("./playlists/%s" % i)
+    if match_playlist_pattern.match(i):
+        match_playlists.append("./playlists/%s" % i)
 o0 = OsuPlaylist(oauth)
 font = "../unifont-15.1.05.otf"
 for playlist in normal_playlists:
