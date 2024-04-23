@@ -19,9 +19,9 @@ for i in os.listdir("./playlists"):
     elif m := match_playlist_pattern.match(i):
         suffix = " — match playlist"
         o0.draw_target = False
+        o0.draw_difficulty_table = True
     else:
         continue
-    o0.draw_difficulty_table = True
     if os.path.exists("./playlists/%s.html" % m.group(1)) and fast_gen:
         print("skipped %s" % m.group(1))
         continue
