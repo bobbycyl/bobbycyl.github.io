@@ -1,17 +1,24 @@
 import os
 import re
 import shutil
+import zipfile
 
 import pandas as pd
+import rosu_pp_py as rosu
 from PIL import Image, ImageDraw, ImageEnhance, ImageFont, UnidentifiedImageError
 from clayutil.futil import Downloader, Properties
 from ossapi import Ossapi
 
 
 class OsuPlaylist(object):
+    headers = {
+        "Referer": "https://bobbycyl.github.io/playlists/",
+        "User-Agent": "Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36",
+    }
     split_pattern = re.compile(r"(.*) \[(.*)] \((.*)\)")
     mod_color = {"NM": "#1050eb", "HD": "#ebb910", "HR": "#eb4040", "EZ": "#40b940", "DT": "#b910eb", "FM": "#40507f", "TB": "#7f4050"}
     target_color = [("brown", "orange"), ("gray", "silver"), ("gold", "yellow")]
+    mods = {"NM": 0, "HD": 8, "HR": 16, "EZ": 2, "DT": 64}
 
     def __init__(self, oauth_filename: str, draw_target: bool = False, draw_difficulty_table: bool = True):
         p = Properties(oauth_filename)
@@ -37,6 +44,50 @@ class OsuPlaylist(object):
             draw.text((1589, 280 - 74 * i), targets[i], font=ImageFont.truetype(font=font, size=44), fill="white")
             draw.text((1588, 280 - 74 * i), targets[i], font=ImageFont.truetype(font=font, size=44), fill="white")
 
+    def _calc_difficulty(self, osu, mods):
+        if "EZ" in mods and "HR" in mods:
+            raise ValueError("EZ and HR are mutually exclusive")
+        if "NM" in mods and len(mods) > 1:
+            raise ValueError("NM is mutually exclusive with other mods")
+        if "FM" in mods and len(mods) > 1:
+            raise ValueError("FM is mutually exclusive with other mods")
+        if "TB" in mods and len(mods) > 1:
+            raise ValueError("TB is mutually exclusive with other mods")
+
+        map = rosu.Beatmap(path=osu)
+        res: dict[str, float | int | str] = {
+            "CS": map.cs,
+            "HP": map.hp,
+            "OD": map.od,
+            "AR": map.ar,
+            "BPM": map.bpm,
+        }
+        if "HR" in mods:
+            res["CS"] *= 1.3
+        if "DT" in mods:
+            res["BPM"] *= 1.5
+        if "EZ" in mods:
+            res["CS"] += 0.5
+        res["CS"] = round(res["CS"], 2)
+        res["BPM"] = round(res["BPM"], 2)
+
+        diff = rosu.Difficulty(mods=sum(self.mods.get(i, 0) for i in mods))
+        diff_attr = diff.calculate(map)
+        if diff_attr.hp is not None:
+            res["HP"] = round(diff_attr.hp, 2)
+        if diff_attr.od is not None:
+            res["OD"] = round(diff_attr.od, 2)
+        if diff_attr.ar is not None:
+            res["AR"] = round(diff_attr.ar, 2)
+        res["Max Combo"] = diff_attr.max_combo
+        res["STARS"] = round(diff_attr.stars, 2)
+        
+        if "FM" in mods:
+            extra = self._calc_difficulty(osu, ["HR"])
+            res["STARS"] = "%s(%s)" % (res["STARS"], extra["STARS"])
+
+        return res
+
     def generate(self, playlist_filename: str, font, suffix: str = ""):
         """生成课题
 
@@ -52,19 +103,21 @@ class OsuPlaylist(object):
         playlist: list[dict] = []
 
         output_dir = playlist_filename.replace(".properties", "") + ".covers"
+        tmp_dir = playlist_filename.replace(".properties", "") + ".osus"
         d = Downloader(output_dir)
+        tmp_d = Downloader(tmp_dir)
         for b in beatmap_list:
             i = playlist_raw.index(b.id) + 1
-            t0, t1, t2, t3 = b.version, b._beatmapset.title_unicode, b._beatmapset.artist_unicode, b._beatmapset.creator
+            t0, t1, t2, t3 = b.version, b.beatmapset().title_unicode, b.beatmapset().artist_unicode, b.beatmapset().creator
             m = self.split_pattern.match(str(p[str(b.id)]))
             notes = m.group(3)
 
             cover_filename = "%d-%d.jpg" % (i, b.id)
-            cover = d.start(b._beatmapset.covers.slimcover, cover_filename)
+            cover = d.start(b.beatmapset().covers.slimcover, cover_filename)
             try:
                 im = Image.open(cover)
             except UnidentifiedImageError:
-                im = Image.open(d.start(b._beatmapset.covers.cover, cover_filename))
+                im = Image.open(d.start(b.beatmapset().covers.cover, cover_filename))
                 im = im.resize((1920, int(im.height * 1920 / im.width)), Image.LANCZOS)  # 缩放到宽为1920
                 im = im.crop((im.width // 2 - 960, 0, im.width // 2 + 960, 360))  # 从中间裁剪到1920x360
             be = ImageEnhance.Brightness(im)
@@ -130,13 +183,48 @@ class OsuPlaylist(object):
             img_src = "./" + (os.path.relpath(os.path.join(output_dir, cover_filename), os.path.split(playlist_filename)[0])).replace("\\", "/")
             img_link = "https://osu.ppy.sh/beatmapsets/%d#%s/%d" % (b.beatmapset_id, b.mode.value, b.id)
 
+            beatmapset_filename = tmp_d.start("https://dl.sayobot.cn/beatmaps/download/mini/%s" % b.beatmapset_id)
+            beatmapset_dir = os.path.join(tmp_dir, str(b.beatmapset_id))
+            with zipfile.ZipFile(beatmapset_filename, "r") as zipf:
+                zipf.extractall(beatmapset_dir)
+            if os.path.exists(os.path.join(beatmapset_dir, "mini/")):
+                beatmapset_dir = os.path.join(beatmapset_dir, "mini/")
+            found_beatmap_filename = ""
+            if "%s - %s (%s) [%s].osu" % (b.beatmapset().artist, b.beatmapset().title, t3, t0) in os.listdir(beatmapset_dir):
+                found_beatmap_filename = "%s - %s (%s) [%s].osu" % (b.beatmapset().artist, b.beatmapset().title, t3, t0)
+            for beatmap_filename in os.listdir(beatmapset_dir):
+                try:
+                    with open(os.path.join(beatmapset_dir, beatmap_filename)) as osuf:
+                        for line in osuf:
+                            if line[:9] == "BeatmapID":
+                                if line.lstrip("BeatmapID:").rstrip("\n") == str(b.id):
+                                    found_beatmap_filename = beatmap_filename
+                                    break
+                except UnicodeDecodeError:
+                    continue
+            if found_beatmap_filename == "":
+                raise ValueError("beatmap %s not found" % b.id)
+            if len(m.group(1)):
+                diff_with_mods = self._calc_difficulty(os.path.join(beatmapset_dir, found_beatmap_filename), m.group(1).split(" "))
+            song_len_in_sec =  b.hit_length
+            if "DT" in m.group(1).split(" "):
+                song_len_in_sec /= 1.5
+            song_len_m, song_len_s = divmod(song_len_in_sec, 60)
+
             playlist.append(
                 {
                     "#": i,
                     "BID": b.id,
                     # "MODE": b.mode.value,
-                    "SID": b.beatmapset_id,
+                    # "SID": b.beatmapset_id,
                     "Beatmap Info": '<a href="%s"><img src="%s" alt="%s" height="118"/></a>' % (img_link, img_src, cover_filename),
+                    "CS": diff_with_mods["CS"],
+                    "HP": diff_with_mods["HP"],
+                    "OD": diff_with_mods["OD"],
+                    "AR": diff_with_mods["AR"],
+                    "Hit Length": "%2d:%02d (%dx)" % (song_len_m, song_len_s, diff_with_mods["Max Combo"]),
+                    "BPM": diff_with_mods["BPM"],
+                    "STARS": diff_with_mods["STARS"],
                     "NOTES": notes,
                 }
             )
@@ -157,6 +245,7 @@ class OsuPlaylist(object):
         )
         with open(playlist_filename.replace(".properties", ".html"), "w", encoding="utf-8") as fi:
             fi.write(html_string.format(table=df.to_html(index=False, escape=False, classes="pd")))
+        shutil.rmtree(tmp_dir)
 
 
 fast_gen = True
@@ -174,11 +263,11 @@ for i in os.listdir("./"):
     elif m := match_playlist_pattern.match(i):
         suffix = " — match playlist"
         o0.draw_target = False
-        o0.draw_difficulty_table = True
+        o0.draw_difficulty_table = False
     elif m := skill_practice_pattern.match(i):
         suffix = " — original skill practice playlist"
         o0.draw_target = False
-        o0.draw_difficulty_table = True
+        o0.draw_difficulty_table = False
     else:
         continue
     if os.path.exists("../%s.html" % m.group(1)) and fast_gen:
