@@ -1,7 +1,13 @@
+@font-face {
+  font-family: "Unifont";
+  src: url("unifont-15.1.05.otf");
+}
+
 .pd {
   border-collapse: collapse;
   border: #1c1c1c;
   color: white;
+  font-family: 'Unifont', monospace;
 }
 
 .pd td,
@@ -11,4 +17,5 @@ th {
 
 .pd tr:hover {
   background: #303030;
+  /* font-weight: bold; */
 }

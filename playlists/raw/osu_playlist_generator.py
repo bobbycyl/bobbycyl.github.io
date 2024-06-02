@@ -80,11 +80,11 @@ class OsuPlaylist(object):
         if diff_attr.ar is not None:
             res["AR"] = round(diff_attr.ar, 2)
         res["Max Combo"] = diff_attr.max_combo
-        res["STARS"] = round(diff_attr.stars, 2)
+        res["Stars"] = round(diff_attr.stars, 2)
         
         if "FM" in mods:
             extra = self._calc_difficulty(osu, ["HR"])
-            res["STARS"] = "%s(%s)" % (res["STARS"], extra["STARS"])
+            res["Stars"] = "%s(%s)" % (res["Stars"], extra["Stars"])
 
         return res
 
@@ -224,8 +224,8 @@ class OsuPlaylist(object):
                     "AR": diff_with_mods["AR"],
                     "Hit Length": "%2d:%02d (%dx)" % (song_len_m, song_len_s, diff_with_mods["Max Combo"]),
                     "BPM": diff_with_mods["BPM"],
-                    "STARS": diff_with_mods["STARS"],
-                    "NOTES": notes,
+                    "Stars": diff_with_mods["Stars"],
+                    "Notes": notes,
                 }
             )
 
@@ -254,7 +254,7 @@ original_playlist_pattern = re.compile(r"O\.(.*)\.properties")
 match_playlist_pattern = re.compile(r"M\.(.*)\.properties")
 skill_practice_pattern = re.compile(r"SP\.(.*)\.properties")
 o0 = OsuPlaylist(oauth)
-font = "../../../unifont-15.1.05.otf"
+font = "../unifont-15.1.05.otf"
 for i in os.listdir("./"):
     if m := original_playlist_pattern.match(i):
         o0.draw_target = True
