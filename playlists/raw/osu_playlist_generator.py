@@ -5,7 +5,7 @@ import zipfile
 
 import pandas as pd
 import rosu_pp_py as rosu
-from PIL import Image, ImageDraw, ImageEnhance, ImageFont, UnidentifiedImageError
+from PIL import Image, ImageDraw, ImageEnhance, ImageFilter, ImageFont, UnidentifiedImageError
 from clayutil.futil import Downloader, Properties
 from ossapi import Ossapi
 
@@ -117,9 +117,14 @@ class OsuPlaylist(object):
             try:
                 im = Image.open(cover)
             except UnidentifiedImageError:
-                im = Image.open(d.start(b.beatmapset().covers.cover, cover_filename))
+                try:
+                    im = Image.open(d.start(b.beatmapset().covers.cover, cover_filename))
+                except UnidentifiedImageError:
+                    im = Image.open("./bg1.jpg")  # 使用默认图片
+                    im = im.filter(ImageFilter.BLUR)
                 im = im.resize((1920, int(im.height * 1920 / im.width)), Image.LANCZOS)  # 缩放到宽为1920
                 im = im.crop((im.width // 2 - 960, 0, im.width // 2 + 960, 360))  # 从中间裁剪到1920x360
+
             be = ImageEnhance.Brightness(im)
             im = be.enhance(0.25)
             draw = ImageDraw.Draw(im)
