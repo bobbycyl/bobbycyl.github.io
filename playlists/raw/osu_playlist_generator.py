@@ -194,6 +194,8 @@ class OsuPlaylist(object):
                 zipf.extractall(beatmapset_dir)
             if os.path.exists(os.path.join(beatmapset_dir, "mini/")):
                 beatmapset_dir = os.path.join(beatmapset_dir, "mini/")
+            if os.path.exists(os.path.join(beatmapset_dir, str(b.beatmapset_id))):
+                beatmapset_dir = os.path.join(beatmapset_dir, str(b.beatmapset_id))
             found_beatmap_filename = ""
             if "%s - %s (%s) [%s].osu" % (b.beatmapset().artist, b.beatmapset().title, t3, t0) in os.listdir(beatmapset_dir):
                 found_beatmap_filename = "%s - %s (%s) [%s].osu" % (b.beatmapset().artist, b.beatmapset().title, t3, t0)
