@@ -9,6 +9,7 @@ import rosu_pp_py as rosu
 from tqdm import tqdm
 from PIL import Image, ImageDraw, ImageEnhance, ImageFilter, ImageFont, UnidentifiedImageError
 from clayutil.futil import Downloader, Properties, compress_as_zip
+from fontfallback import writing
 from ossapi import Ossapi
 
 
@@ -22,8 +23,8 @@ class OsuPlaylist(object):
     target_color = [("brown", "orange"), ("gray", "silver"), ("gold", "yellow")]
     mods = {"NM": 0, "HD": 8, "HR": 16, "EZ": 2, "DT": 64}  # see https://github.com/ppy/osu-api/wiki#mods
     osz_type = "mini"  # see https://www.showdoc.com.cn/SoulDee/3969242108165986
-    font0 = "../DejavuSC.ttf"
-    font1 = "../MapleMono-SC-NF-Regular.ttf"
+    font_sans = "../DejavuSC.ttf"
+    font_mono = "../../../MapleMono-SC-NF-Regular.ttf"  # https://github.com/subframe7536/maple-font
 
     def __init__(self, oauth_filename: str, draw_target: bool = False, output_zip: bool = False):
         p = Properties(oauth_filename)
@@ -38,18 +39,18 @@ class OsuPlaylist(object):
         for i in range(len(mods)):
             draw.rounded_rectangle((1774 - 118 * i, 34, 1874 - 118 * i, 95.8), 12, fill="#303030", width=0)
             draw.rounded_rectangle((1772 - 118 * i, 32, 1872 - 118 * i, 93.8), 12, fill=self.mod_color[mods[len(mods) - i - 1]], width=0)
-            draw.text((1796 - 118 * i, 35), mods[len(mods) - i - 1], font=ImageFont.truetype(font=self.font1, size=48), fill="#1f1f1f")
-            draw.text((1791 - 118 * i, 32), mods[len(mods) - i - 1], font=ImageFont.truetype(font=self.font1, size=48), fill="white")
-            draw.text((1792 - 118 * i, 32), mods[len(mods) - i - 1], font=ImageFont.truetype(font=self.font1, size=48), fill="white")
-            draw.text((1793 - 118 * i, 32), mods[len(mods) - i - 1], font=ImageFont.truetype(font=self.font1, size=48), fill="white")
+            draw.text((1796 - 118 * i, 35), mods[len(mods) - i - 1], font=ImageFont.truetype(font=self.font_mono, size=48), fill="#1f1f1f")
+            draw.text((1791 - 118 * i, 32), mods[len(mods) - i - 1], font=ImageFont.truetype(font=self.font_mono, size=48), fill="white")
+            draw.text((1792 - 118 * i, 32), mods[len(mods) - i - 1], font=ImageFont.truetype(font=self.font_mono, size=48), fill="white")
+            draw.text((1793 - 118 * i, 32), mods[len(mods) - i - 1], font=ImageFont.truetype(font=self.font_mono, size=48), fill="white")
 
     def _draw_target_badges(self, targets, draw):
         for i in range(len(targets)):
             draw.rounded_rectangle((1860, 278 - 74 * i, 1871, 334 - 74 * i), 36, fill=self.target_color[i][0], width=0)
             draw.rounded_rectangle((1859, 276 - 74 * i, 1869, 332 - 74 * i), 36, fill=self.target_color[i][1], width=0)
-            draw.text((1552, 282 - 74 * i), targets[i], font=ImageFont.truetype(font=self.font1, size=44), fill=(40, 40, 40))
-            draw.text((1551, 280 - 74 * i), targets[i], font=ImageFont.truetype(font=self.font1, size=44), fill="white")
-            draw.text((1550, 280 - 74 * i), targets[i], font=ImageFont.truetype(font=self.font1, size=44), fill="white")
+            draw.text((1552, 282 - 74 * i), targets[i], font=ImageFont.truetype(font=self.font_mono, size=44), fill=(40, 40, 40))
+            draw.text((1551, 280 - 74 * i), targets[i], font=ImageFont.truetype(font=self.font_mono, size=44), fill="white")
+            draw.text((1550, 280 - 74 * i), targets[i], font=ImageFont.truetype(font=self.font_mono, size=44), fill="white")
 
     def _calc_difficulty(self, osu, mods):
         if "EZ" in mods and "HR" in mods:
@@ -137,39 +138,52 @@ class OsuPlaylist(object):
             be = ImageEnhance.Brightness(im)
             im = be.enhance(0.33)
             draw = ImageDraw.Draw(im)
-            title_len = draw.textlength(b.beatmapset().title_unicode, font=ImageFont.truetype(font=self.font0, size=72))
+            title_len = draw.textlength(b.beatmapset().title_unicode, font=ImageFont.truetype(font=self.font_sans, size=72))
             if title_len > 1500:
                 cut_length = -1
                 while True:
                     t1_cut = b.beatmapset().title_unicode[:cut_length] + "..."
-                    title_len = draw.textlength(t1_cut, font=ImageFont.truetype(font=self.font0, size=72))
+                    title_len = draw.textlength(t1_cut, font=ImageFont.truetype(font=self.font_sans, size=72))
                     if title_len <= 1500:
                         break
                     cut_length -= 1
                 b.beatmapset().title_unicode = t1_cut
-            draw.text((42, 19), b.version, font=ImageFont.truetype(font=self.font1, size=48), fill="#1f1f1f")
-            draw.text((40, 16), b.version, font=ImageFont.truetype(font=self.font1, size=48), fill="white")
-            draw.text((41, 16), b.version, font=ImageFont.truetype(font=self.font1, size=48), fill="white")
-            draw.text((40, 17), b.version, font=ImageFont.truetype(font=self.font1, size=48), fill="white")
-            draw.text((41, 17), b.version, font=ImageFont.truetype(font=self.font1, size=48), fill="white")
-            draw.text((42, 132), b.beatmapset().title_unicode, font=ImageFont.truetype(font=self.font0, size=72), fill="#1f1f1f")
-            draw.text((42, 131), b.beatmapset().title_unicode, font=ImageFont.truetype(font=self.font0, size=72), fill="#1f1f1f")
-            draw.text((42, 133), b.beatmapset().title_unicode, font=ImageFont.truetype(font=self.font0, size=72), fill=(40, 40, 40))
-            draw.text((41, 133), b.beatmapset().title_unicode, font=ImageFont.truetype(font=self.font0, size=72), fill=(40, 40, 40))
-            draw.text((41, 132), b.beatmapset().title_unicode, font=ImageFont.truetype(font=self.font0, size=72), fill=(40, 40, 40))
-            draw.text((40, 129), b.beatmapset().title_unicode, font=ImageFont.truetype(font=self.font0, size=72), fill="white")
-            draw.text((41, 129), b.beatmapset().title_unicode, font=ImageFont.truetype(font=self.font0, size=72), fill="white")
-            draw.text((40, 130), b.beatmapset().title_unicode, font=ImageFont.truetype(font=self.font0, size=72), fill="white")
-            draw.text((41, 130), b.beatmapset().title_unicode, font=ImageFont.truetype(font=self.font0, size=72), fill="white")
-            draw.text((41, 218), b.beatmapset().artist_unicode, font=ImageFont.truetype(font=self.font0, size=44), fill="#1f1f1f")
-            draw.text((40, 218), b.beatmapset().artist_unicode, font=ImageFont.truetype(font=self.font0, size=44), fill=(40, 40, 40))
-            draw.text((40, 216), b.beatmapset().artist_unicode, font=ImageFont.truetype(font=self.font0, size=44), fill="white")
-            draw.text((41, 292), "mapped by", font=ImageFont.truetype(font=self.font1, size=36), fill="#1f1f1f")
-            draw.text((40, 292), "mapped by", font=ImageFont.truetype(font=self.font1, size=36), fill=(40, 40, 40))
-            draw.text((40, 290), "mapped by", font=ImageFont.truetype(font=self.font1, size=36), fill="white")
-            draw.text((261, 292), b.beatmapset().creator, font=ImageFont.truetype(font=self.font1, size=36), fill="#1f1f2a")
-            draw.text((260, 290), b.beatmapset().creator, font=ImageFont.truetype(font=self.font1, size=36), fill=(180, 235, 250))
-            draw.text((259, 290), b.beatmapset().creator, font=ImageFont.truetype(font=self.font1, size=36), fill=(180, 235, 250))
+            fonts = writing.load_fonts("../DejavuSC.ttf", "../../../AlibabaPuHuiTi-3-55-Regular.ttf")  # https://www.alibabafonts.com/#/font
+            draw.text((42, 19), b.version, font=ImageFont.truetype(font=self.font_mono, size=48), fill="#1f1f1f")
+            draw.text((40, 16), b.version, font=ImageFont.truetype(font=self.font_mono, size=48), fill="white")
+            draw.text((41, 16), b.version, font=ImageFont.truetype(font=self.font_mono, size=48), fill="white")
+            draw.text((40, 17), b.version, font=ImageFont.truetype(font=self.font_mono, size=48), fill="white")
+            draw.text((41, 17), b.version, font=ImageFont.truetype(font=self.font_mono, size=48), fill="white")
+            # draw.text((42, 132), b.beatmapset().title_unicode, font=ImageFont.truetype(font=self.font0, size=72), fill="#1f1f1f")
+            # draw.text((42, 131), b.beatmapset().title_unicode, font=ImageFont.truetype(font=self.font0, size=72), fill="#1f1f1f")
+            # draw.text((42, 133), b.beatmapset().title_unicode, font=ImageFont.truetype(font=self.font0, size=72), fill=(40, 40, 40))
+            # draw.text((41, 133), b.beatmapset().title_unicode, font=ImageFont.truetype(font=self.font0, size=72), fill=(40, 40, 40))
+            # draw.text((41, 132), b.beatmapset().title_unicode, font=ImageFont.truetype(font=self.font0, size=72), fill=(40, 40, 40))
+            # draw.text((40, 129), b.beatmapset().title_unicode, font=ImageFont.truetype(font=self.font0, size=72), fill="white")
+            # draw.text((41, 129), b.beatmapset().title_unicode, font=ImageFont.truetype(font=self.font0, size=72), fill="white")
+            # draw.text((40, 130), b.beatmapset().title_unicode, font=ImageFont.truetype(font=self.font0, size=72), fill="white")
+            # draw.text((41, 130), b.beatmapset().title_unicode, font=ImageFont.truetype(font=self.font0, size=72), fill="white")
+            # draw.text((41, 218), b.beatmapset().artist_unicode, font=ImageFont.truetype(font=self.font0, size=44), fill="#1f1f1f")
+            # draw.text((40, 218), b.beatmapset().artist_unicode, font=ImageFont.truetype(font=self.font0, size=44), fill=(40, 40, 40))
+            # draw.text((40, 216), b.beatmapset().artist_unicode, font=ImageFont.truetype(font=self.font0, size=44), fill="white")
+            writing.draw_text_v2(draw, (42, 132), b.beatmapset().title_unicode, "#1f1f1f", fonts, 72)
+            writing.draw_text_v2(draw, (42, 131), b.beatmapset().title_unicode, "#1f1f1f", fonts, 72)
+            writing.draw_text_v2(draw, (42, 133), b.beatmapset().title_unicode, (40, 40, 40), fonts, 72)
+            writing.draw_text_v2(draw, (41, 133), b.beatmapset().title_unicode, (40, 40, 40), fonts, 72)
+            writing.draw_text_v2(draw, (41, 132), b.beatmapset().title_unicode, (40, 40, 40), fonts, 72)
+            writing.draw_text_v2(draw, (40, 129), b.beatmapset().title_unicode, "white", fonts, 72)
+            writing.draw_text_v2(draw, (41, 129), b.beatmapset().title_unicode, "white", fonts, 72)
+            writing.draw_text_v2(draw, (40, 130), b.beatmapset().title_unicode, "white", fonts, 72)
+            writing.draw_text_v2(draw, (41, 130), b.beatmapset().title_unicode, "white", fonts, 72)
+            writing.draw_text_v2(draw, (41, 218), b.beatmapset().artist_unicode, "#1f1f1f", fonts, 44)
+            writing.draw_text_v2(draw, (40, 218), b.beatmapset().artist_unicode, (40, 40, 40), fonts, 44)
+            writing.draw_text_v2(draw, (40, 216), b.beatmapset().artist_unicode, "white", fonts, 44)
+            draw.text((41, 292), "mapped by", font=ImageFont.truetype(font=self.font_mono, size=36), fill="#1f1f1f")
+            draw.text((40, 292), "mapped by", font=ImageFont.truetype(font=self.font_mono, size=36), fill=(40, 40, 40))
+            draw.text((40, 290), "mapped by", font=ImageFont.truetype(font=self.font_mono, size=36), fill="white")
+            draw.text((261, 292), b.beatmapset().creator, font=ImageFont.truetype(font=self.font_mono, size=36), fill="#1f1f2a")
+            draw.text((260, 290), b.beatmapset().creator, font=ImageFont.truetype(font=self.font_mono, size=36), fill=(180, 235, 250))
+            draw.text((259, 290), b.beatmapset().creator, font=ImageFont.truetype(font=self.font_mono, size=36), fill=(180, 235, 250))
             if len(m.group(1)):
                 self._draw_mod_tags(m.group(1).split(" "), draw)
             if self.draw_target:
@@ -261,7 +275,7 @@ oauth = "../../../osu.properties"
 original_playlist_pattern = re.compile(r"O\.(.*)\.properties")
 match_playlist_pattern = re.compile(r"M\.(.*)\.properties")
 skill_practice_pattern = re.compile(r"SP\.(.*)\.properties")
-o0 = OsuPlaylist(oauth, output_zip=True)
+o0 = OsuPlaylist(oauth, output_zip=False)
 for i in os.listdir("./"):
     if m := original_playlist_pattern.match(i):
         o0.draw_target = True
