@@ -1,13 +1,8 @@
-@font-face {
-  font-family: "Unifont";
-  src: url("unifont-15.1.05.otf");
-}
-
 .pd {
   border-collapse: collapse;
   border: #1c1c1c;
   color: white;
-  font-family: 'Unifont', monospace;
+  font-family: monospace;
 }
 
 .pd td,
