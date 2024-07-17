@@ -72,10 +72,12 @@ class OsuPlaylist(object):
         }
         if "HR" in mods:
             res["CS"] *= 1.3
+            if res["CS"] > 10:
+                res["CS"] = 10
         if "DT" in mods:
             res["BPM"] *= 1.5
         if "EZ" in mods:
-            res["CS"] += 0.5
+            res["CS"] *= 0.5
         res["CS"] = round(res["CS"], 2)
         res["BPM"] = round(res["BPM"], 2)
 
