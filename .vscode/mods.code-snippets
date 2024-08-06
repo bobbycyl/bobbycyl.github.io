@@ -15,11 +15,9 @@
 	// 	],
 	// 	"description": "Log output to console"
 	// }
-	"NoMod": {
-		"prefix": "NM",
-		"body": [
-			"{\"acronym\":\"NM\"}"
-		]
+	"MatchSetNoMod": {
+		"prefix": "nm",
+		"body": "[{\"acronym\":\"NM\"}]"
 	},
 	"Hidden": {
 		"prefix": "HD",
@@ -27,10 +25,20 @@
 			"{\"acronym\":\"HD\"}"
 		]
 	},
+	"MatchSetHidden": {
+		"prefix": "mhd",
+		"body": "[{\"acronym\":\"HD\"}]"
+	},
 	"HardRock": {
 		"prefix": "HR",
 		"body": [
 			"{\"acronym\":\"HR\"}"
+		]
+	},
+	"MatchSetHardRock": {
+		"prefix": "mhr",
+		"body": [
+			"[{\"acronym\":\"HR\"}]"
 		]
 	},
 	"DoubleTime": {
@@ -39,16 +47,22 @@
 			"{\"acronym\":\"DT\"}"
 		]
 	},
-	"FreeMod": {
-		"prefix": "FM",
+	"MatchSetDoubleTime": {
+		"prefix": "mdt",
 		"body": [
-			"{\"acronym\":\"FM\"}"
+			"[{\"acronym\":\"DT\"}]"
 		]
 	},
-	"TieBreaker": {
-		"prefix": "TB",
+	"MatchSetFreeMod": {
+		"prefix": "fm",
 		"body": [
-			"{\"acronym\":\"TB\"}"
+			"[{\"acronym\":\"FM\"}]"
+		]
+	},
+	"MatchSetTieBreaker": {
+		"prefix": "tb",
+		"body": [
+			"[{\"acronym\":\"TB\"}]"
 		]
 	},
 }
