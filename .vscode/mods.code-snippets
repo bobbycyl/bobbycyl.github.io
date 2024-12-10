@@ -20,43 +20,55 @@
 		"body": "[{\"acronym\":\"NM\"}]"
 	},
 	"Hidden": {
-		"prefix": "HD",
+		"prefix": "Hidden",
 		"body": [
 			"{\"acronym\":\"HD\"}"
 		]
 	},
 	"MatchSetHidden": {
-		"prefix": "mhd",
+		"prefix": "hd",
 		"body": "[{\"acronym\":\"HD\"}]"
 	},
 	"HardRock": {
-		"prefix": "HR",
+		"prefix": "HardRock",
 		"body": [
 			"{\"acronym\":\"HR\"}"
 		]
 	},
 	"MatchSetHardRock": {
-		"prefix": "mhr",
+		"prefix": "hr",
 		"body": [
 			"[{\"acronym\":\"HR\"}]"
 		]
 	},
 	"DoubleTime": {
-		"prefix": "DT",
+		"prefix": "DoubleTime",
 		"body": [
 			"{\"acronym\":\"DT\"}"
 		]
 	},
 	"MatchSetDoubleTime": {
-		"prefix": "mdt",
+		"prefix": "dt",
 		"body": [
 			"[{\"acronym\":\"DT\"}]"
+		]
+	},
+	"MatchSetNightCore": {
+		"prefix": "nc",
+		"body": [
+			"[{\"acronym\":\"NC\"}]"
 		]
 	},
 	"MatchSetFreeMod": {
 		"prefix": "fm",
 		"body": [
 			"[{\"acronym\":\"FM\"}]"
+		]
+	},
+	"MatchSetFreeModPlus": {
+		"prefix": "f+",
+		"body": [
+			"[{\"acronym\":\"F+\"}]"
 		]
 	},
 	"MatchSetTieBreaker": {
