@@ -77,4 +77,10 @@
 			"[{\"acronym\":\"TB\"}]"
 		]
 	},
+	"EditorNotes": {
+		"prefix": "editornotes",
+		"body": [
+			"（编者注：原赛图已下架，使用替代谱面）"
+		]
+	}
 }
